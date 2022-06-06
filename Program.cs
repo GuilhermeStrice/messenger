@@ -1,134 +1,36 @@
-﻿using System.Net.Sockets;
-using System.Net;
-using System.Text;
-
-namespace Messenger
+﻿namespace Messenger
 {
+    // test
     class Program
     {
-        static TcpListener listener = new TcpListener(IPAddress.Any, 2323);
-
-        static List<Connection> connections = new List<Connection>();
-
-        static List<TrustedClient> trusted_clients = new List<TrustedClient>();
-
-        static bool test = true;
+        static TickManager.TickManager tick_manager = new TickManager.TickManager();
+        static Messenger messenger = new Messenger();
 
         static void Main(string[] args)
         {
-            string trusted_clients_file = "trusted_clients";
-            if (!File.Exists(trusted_clients_file))
+            messenger.Init();
+
+            tick_manager.Frequency = 200; // For 200Hz
+            tick_manager.OnTick += Tick_manager_OnTick;
+
+            while (true)
             {
-                Console.WriteLine("Trusted clients file does not exist. Creating.");
-                File.Create(trusted_clients_file);
-
-                Console.WriteLine("Please add at least one trusted client to the file to continue");
-                Environment.Exit(0);
+                tick_manager.Tick();
+                //Thread.Sleep(tick_manager.TimeRemaining()); // don't use this, Thread.Sleep takes longer than TimeRemaining() return value
             }
+        }
 
-            string[] trusted_clients_file_contents = File.ReadAllLines(trusted_clients_file);
+        private static void Tick_manager_OnTick()
+        {
+            /*Console.Write("MSPT: ");
+            Console.WriteLine(tick_manager.MSPT);
 
-            for (int i = 0; i < trusted_clients_file_contents.Length; i++)
-            {
-                try
-                {
-                    trusted_clients.Add(TrustedClient.Deserialize(trusted_clients_file_contents[i]));
-                }
-                catch
-                {
-                    Console.WriteLine("Trusted Client on line " + (i + 1) + " is not valid. Terminating");
-                    Environment.Exit(0);
-                }
-            }
+            Console.Write("TPS: ");
+            Console.WriteLine(tick_manager.TPS);*/
 
-            if (!test)
-            {
-                listener.Start();
-                Console.WriteLine("Listening to possible connections");
+            messenger.Handle();
 
-                while (true)
-                {
-                    if (listener.Pending())
-                    {
-                        Console.WriteLine("Client connection received");
-                        var client = listener.AcceptTcpClient();
-
-                        var connection = new Connection(client);
-                        
-                        try
-                        {
-                            Console.WriteLine("Handshaking: " + ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString());
-                        
-                            connection.Handshake();
-                            connections.Add(connection);
-                        }
-                        catch
-                        {
-                            Console.WriteLine("Client connection dropped before handshake");
-                        }
-                    }
-
-                    for (int i = 0; i < connections.Count(); i++)
-                    {
-                        Connection con = connections[i];
-
-                        if (con.Terminated)
-                        {
-                            connections.RemoveAt(i); // just remove the connection
-                            continue;
-                        }
-
-                        if (!string.IsNullOrEmpty(con.client_identifier) && !con.IsTrusted)
-                        {
-                            var received_trusted_client = TrustedClient.Deserialize(con.client_identifier);
-                            
-                            if (!received_trusted_client.IsValid())
-                                con.Terminate();
-                            
-                            // check if is trusted
-                            for (int j = 0; j < trusted_clients.Count(); j++)
-                            {
-                                if (trusted_clients[j] == received_trusted_client)
-                                {
-                                    con.IsTrusted = true;
-                                    break; // exit j loop
-                                }
-                            }
-
-                            // is not in trusted list
-                            if (!con.IsTrusted)
-                            {
-                                // just terminate
-                                con.Terminate();
-                            }
-                        }
-
-                        con.Handle();
-
-                        if (con.Messages.Count() > 0)
-                        {
-                            var message = con.Messages.Dequeue();
-                        }
-                    }
-                }
-            }
-            else
-            {
-                /*var message = new Message();
-                message.Command = "handshake";
-                message.Content = "some_random_stuff";
-
-                var serialized = message.Serialize();
-                Console.WriteLine(serialized);
-
-                var message_reversed = Message.Deserialize(serialized);
-                Console.WriteLine(message_reversed.Command);
-                Console.WriteLine(message_reversed.Content);*/
-
-                //var trusted_client = new TrustedClient("12.12.12.12", "id_potente", "Servidor 1");
-                //File.WriteAllText("test_id", trusted_client.Serialize());
-                //Console.WriteLine(trusted_client.Serialize());
-            }
+            // here we will test stuff and things
         }
     }
 }
