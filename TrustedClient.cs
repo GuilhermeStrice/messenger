@@ -1,4 +1,5 @@
 using System.Text;
+using Messenger.Helpers;
 
 namespace Messenger
 {
@@ -10,11 +11,24 @@ namespace Messenger
         public string ServerIdentifier { get; private set; }
         public string PublicName { get; private set; }
 
+        public string SerializedTrustedClient { get; set; }
+
         public TrustedClient(string ip, string server_id, string public_name)
         {
             IP = ip;
             ServerIdentifier = server_id;
             PublicName = public_name;
+
+            SerializedTrustedClient = Serialize();
+        }
+
+        private TrustedClient(string ip, string server_id, string public_name, string serializedTrustedClient)
+        {
+            IP = ip;
+            ServerIdentifier = server_id;
+            PublicName = public_name;
+
+            SerializedTrustedClient = serializedTrustedClient;
         }
 
         public string Serialize()
@@ -46,7 +60,7 @@ namespace Messenger
                 var server_id = Encoding.UTF8.GetString(server_id_bytes);
                 var name = Encoding.UTF8.GetString(name_bytes);
                 
-                var trusted_client = new TrustedClient(ip, server_id, name);
+                var trusted_client = new TrustedClient(ip, server_id, name, base64_str);
                 return trusted_client;
             }
             catch
@@ -64,16 +78,49 @@ namespace Messenger
 
         public static bool operator==(TrustedClient right, TrustedClient left)
         {
-            return right.IP == left.IP &&
+            return right != null && left != null &&
+                right.IP == left.IP &&
                 right.ServerIdentifier == left.ServerIdentifier &&
                 right.PublicName == left.PublicName;
         }
 
         public static bool operator!=(TrustedClient right, TrustedClient left)
         {
-            return right.IP != left.IP ||
+            return right != null && left != null &&
+                right.IP != left.IP ||
                 right.ServerIdentifier != left.ServerIdentifier ||
                 right.PublicName != left.PublicName;
+        }
+
+        public static ConcurrentList<TrustedClient> ReadFileList(string trusted_clients_file_path = "trusted_clients")
+        {
+            if (!File.Exists(trusted_clients_file_path))
+            {
+                Console.WriteLine("Trusted clients file does not exist. Creating.");
+                File.Create(trusted_clients_file_path);
+
+                Console.WriteLine("Please add at least one trusted client to the file to continue");
+                Environment.Exit(0);
+            }
+
+            ConcurrentList<TrustedClient> trusted_clients = new ConcurrentList<TrustedClient>();
+
+            string[] trusted_clients_file_contents = File.ReadAllLines(trusted_clients_file_path);
+
+            for (int i = 0; i < trusted_clients_file_contents.Length; i++)
+            {
+                try
+                {
+                    trusted_clients.Add(TrustedClient.Deserialize(trusted_clients_file_contents[i]));
+                }
+                catch
+                {
+                    Console.WriteLine("Trusted Client on line " + (i + 1) + " is not valid. Terminating");
+                    Environment.Exit(0);
+                }
+            }
+
+            return trusted_clients;
         }
     }
 }

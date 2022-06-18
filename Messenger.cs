@@ -1,5 +1,9 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+
+using Messenger.Common;
+using Messenger.Helpers;
 
 namespace Messenger
 {
@@ -7,57 +11,32 @@ namespace Messenger
     {
 		TcpListener listener = new TcpListener(IPAddress.Any, 2323);
 
-        List<Connection> connections = new List<Connection>();
-
-        List<TrustedClient> trusted_clients = new List<TrustedClient>();
+        ConcurrentList<ServerClient> connections = new ConcurrentList<ServerClient>();
+        ConcurrentList<TrustedClient> trusted_clients = new ConcurrentList<TrustedClient>();
 
         static bool test = true;
 
         public void Init()
         {
-            string trusted_clients_file = "trusted_clients";
-            if (!File.Exists(trusted_clients_file))
-            {
-                Console.WriteLine("Trusted clients file does not exist. Creating.");
-                File.Create(trusted_clients_file);
-
-                Console.WriteLine("Please add at least one trusted client to the file to continue");
-                Environment.Exit(0);
-            }
-
-            string[] trusted_clients_file_contents = File.ReadAllLines(trusted_clients_file);
-
-            for (int i = 0; i < trusted_clients_file_contents.Length; i++)
-            {
-                try
-                {
-                    trusted_clients.Add(TrustedClient.Deserialize(trusted_clients_file_contents[i]));
-                }
-                catch
-                {
-                    Console.WriteLine("Trusted Client on line " + (i + 1) + " is not valid. Terminating");
-                    Environment.Exit(0);
-                }
-            }
+            trusted_clients = TrustedClient.ReadFileList("trusted_clients");
 
             listener.Start();
             Console.WriteLine("Listening to possible connections");
         }
 
-        public void Handle()
+        public async Task AcceptClients()
         {
             if (listener.Pending())
             {
                 Console.WriteLine("Client connection received");
-                var client = listener.AcceptTcpClient();
+                var client = await listener.AcceptTcpClientAsync();
 
-                var connection = new Connection(client);
+                var connection = new ServerClient(client);
                 
                 try
                 {
-                    Console.WriteLine("Handshaking: " + ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString());
-                
-                    connection.Handshake();
+                    Console.WriteLine("Will begin handshaking: " + ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString());
+
                     connections.Add(connection);
                 }
                 catch
@@ -65,59 +44,74 @@ namespace Messenger
                     Console.WriteLine("Client connection dropped before handshake");
                 }
             }
+        }
 
-            for (int i = 0; i < connections.Count(); i++)
+        public async Task HandMessagePassing(ServerClient con)
+        {
+            Message msg;
+            if (MessageQueue.TryGetNextMessage(out msg))
             {
-                Connection con = connections[i];
+                // this is to pass to another client
 
-                if (con.Terminated)
+                bool passed = false;
+
+                for (int j = 0; j < connections.Length; j++)
                 {
-                    connections.RemoveAt(i); // just remove the connection
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(con.client_identifier) && !con.IsTrusted)
-                {
-                    var received_trusted_client = TrustedClient.Deserialize(con.client_identifier);
-                    
-                    if (!received_trusted_client.IsValid())
-                        con.Terminate();
-                    
-                    // check if is trusted
-                    for (int j = 0; j < trusted_clients.Count(); j++)
-                    {
-                        if (trusted_clients[j] == received_trusted_client)
-                        {
-                            con.IsTrusted = true;
-                            break; // exit j loop
-                        }
-                    }
-
-                    // is not in trusted list
-                    if (!con.IsTrusted)
-                    {
-                        // just terminate
-                        con.Terminate();
-                    }
-                }
-
-                con.Handle();
-
-                if (con.Messages.Count() > 0)
-                {
-                    var message = con.Messages.Dequeue();
-
-                    // this is to pass to another client
-
-                    // decrypt content with server private key
-                    // parse inner message
                     // should be 
-                    // €client_identifier=server_identifier;content:message;$
+                    // €command=server_identifier;content:message;$
                     // TrustedClient.ServerIdentifier
-                    // encrypt with second client's public key
-                    // and send to that client with that identifier
+
+                    if (connections[j].ClassIdentifier.ServerIdentifier == inner_message.Command)
+                    {
+                        passed = true;
+                    
+                        // encrypt with second client's public key
+                        // and send to that client with that identifier
+                    
+                        
+                    }
+                }
+
+                if (!passed)
+                {
+                    // server_identifier wrong
                 }
             }
+        }
+
+        public async Task HandleData(ServerClient con)
+        {
+            if (con.Terminated)
+            {
+                connections.Remove(con); // just remove the connection
+                return;
+            }
+
+            if (con.ClassIdentifier != null && con.Trustworthiness == Trustworthiness.NotChecked)
+            {
+                // check if is trusted
+                for (var tcI = 0; tcI < trusted_clients.Length; tcI++)
+                {
+                    var t = trusted_clients[tcI];
+                    if (t == con.ClassIdentifier)
+                    {
+                        con.Trustworthiness = Trustworthiness.Trusted;
+                        break;
+                    }
+                    else
+                        con.Trustworthiness = Trustworthiness.NotTrusted;
+                }
+
+                // is not in trusted list
+                if (con.Trustworthiness == Trustworthiness.NotTrusted)
+                {
+                    // just terminate and process next client
+                    con.Terminate();
+                    continue;
+                }
+            }
+
+            await con.Handle();
 
             /*var message = new Message();
             message.Command = "handshake";

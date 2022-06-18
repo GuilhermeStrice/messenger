@@ -10,12 +10,13 @@
         {
             messenger.Init();
 
-            tick_manager.Frequency = 200; // For 200Hz
-            tick_manager.OnTick += Tick_manager_OnTick;
+            //tick_manager.Frequency = 200; // For 200Hz
+            //tick_manager.OnTick += Tick_manager_OnTick;
 
             while (true)
             {
-                tick_manager.Tick();
+                messenger.Handle();
+                //tick_manager.Tick();
                 //Thread.Sleep(tick_manager.TimeRemaining()); // don't use this, Thread.Sleep takes longer than TimeRemaining() return value
             }
         }

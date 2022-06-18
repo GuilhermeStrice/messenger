@@ -7,6 +7,6 @@ $ marks the end
 
 Commands
 - handshake
-- tr4
+- tr4: client_identifier
 - pass
 - terminate
