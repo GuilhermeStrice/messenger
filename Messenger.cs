@@ -79,14 +79,17 @@ namespace Messenger
             }
         }
 
-        public async Task HandleData(ServerClient con)
+        public async Task HandleTerminations(ServerClient con)
         {
             if (con.Terminated)
             {
                 connections.Remove(con); // just remove the connection
                 return;
             }
+        }
 
+        public async Task HandleData(ServerClient con)
+        {
             if (con.ClassIdentifier != null && con.Trustworthiness == Trustworthiness.NotChecked)
             {
                 // check if is trusted
@@ -107,7 +110,7 @@ namespace Messenger
                 {
                     // just terminate and process next client
                     con.Terminate();
-                    continue;
+                    return;
                 }
             }
 

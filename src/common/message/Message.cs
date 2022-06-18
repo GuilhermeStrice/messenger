@@ -46,8 +46,7 @@ namespace Messenger.Common
                 throw new MessageException(message);
 
             var msg = new Message();
-            msg.Command = command_parts[1];
-            msg.InnerMessage = InnerMessage.Deserialize(PgpManager.Pgp.Decrypt(content_parts[1], key.Key, key.Passphrase));
+            msg.Command = command_parts[1];            msg.InnerMessage = InnerMessage.Deserialize(PgpManager.Pgp.Decrypt(content_parts[1], key.Key, key.Passphrase));
 
             return msg;
         }
