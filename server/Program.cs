@@ -1,37 +1,30 @@
-﻿namespace Server
+﻿using Messenger.Common.Server;
+
+namespace Server
 {
     // test
     class Program
     {
-        //static TickManager.TickManager tick_manager = new TickManager.TickManager();
         //static Messenger messenger = new Messenger();
 
         static void Main(string[] args)
         {
             //messenger.Init();
 
-            //tick_manager.Frequency = 200; // For 200Hz
-            //tick_manager.OnTick += Tick_manager_OnTick;
+            /*var message = new Message();
+            message.Command = "handshake";
+            message.Content = "some_random_stuff";
 
-            while (true)
-            {
-                //messenger.Handle();
-                //tick_manager.Tick();
-                //Thread.Sleep(tick_manager.TimeRemaining()); // don't use this, Thread.Sleep takes longer than TimeRemaining() return value
-            }
-        }
+            var serialized = message.Serialize();
+            Console.WriteLine(serialized);
 
-        private static void Tick_manager_OnTick()
-        {
-            /*Console.Write("MSPT: ");
-            Console.WriteLine(tick_manager.MSPT);
+            var message_reversed = Message.Deserialize(serialized);
+            Console.WriteLine(message_reversed.Command);
+            Console.WriteLine(message_reversed.Content);*/
 
-            Console.Write("TPS: ");
-            Console.WriteLine(tick_manager.TPS);*/
-
-            //messenger.Handle();
-
-            // here we will test stuff and things
+            var trusted_client = new TrustedClient("12.12.12.12", "id_potente", "Servidor 1");
+            File.WriteAllText("test_id", trusted_client.Serialize());
+            Console.WriteLine(trusted_client.Serialize());
         }
     }
 }
