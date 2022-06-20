@@ -2,7 +2,7 @@ using Messenger.Common.Pgp;
 
 namespace Messenger.Common.Messaging
 {
-    public class InnerMessage
+    public class InnerMessages
     {
         public string? Command { get; set; }
         public string? Content { get; set; }
