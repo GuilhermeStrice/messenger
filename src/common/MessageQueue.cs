@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Messenger.Common.Messaging;
 
 namespace Messenger.Common
 {
@@ -9,7 +10,9 @@ namespace Messenger.Common
 
         public static bool TryGetNextMessage(out Message msg)
         {
+#pragma warning disable CS8601
             var can_i = Messages.TryDequeue(out msg);
+#pragma warning disable CS8601
             return can_i;
         }
 

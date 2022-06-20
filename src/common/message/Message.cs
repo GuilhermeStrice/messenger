@@ -1,27 +1,32 @@
-using Org.BouncyCastle.Bcpg.OpenPgp;
+using Messenger.Common.Pgp;
 
-namespace Messenger.Common
+namespace Messenger.Common.Messaging
 {
     public class Message
     {
         public string Command { get; set; }
 
-        public InnerMessage InnerMessage { get; set; }
+        public InnerMessage? InnerMessage { get; set; }
 
         public Message()
         {
+            Command = "";
         }
 
         public string Serialize(PublicKey key)
         {
-            if (string.IsNullOrEmpty(Command))
+            if (string.IsNullOrEmpty(Command) && InnerMessage != null)
                 throw new MessageException("Command or content empty");
             string msg = "€";
             msg += "command:";
             msg += Command;
             msg += ";";
             msg += "content:";
+#pragma warning disable CS8602
+#pragma warning disable CS8604
             msg += PgpManager.Pgp.Encrypt(InnerMessage.Serialize(), key.Key);
+#pragma warning restore CS8602
+#pragma warning restore CS8602
             msg += ";$";
 
             return msg;
@@ -46,7 +51,12 @@ namespace Messenger.Common
                 throw new MessageException(message);
 
             var msg = new Message();
-            msg.Command = command_parts[1];            msg.InnerMessage = InnerMessage.Deserialize(PgpManager.Pgp.Decrypt(content_parts[1], key.Key, key.Passphrase));
+            msg.Command = command_parts[1];
+            msg.InnerMessage = InnerMessage.Deserialize(PgpManager.Pgp.Decrypt(content_parts[1],
+#pragma warning disable CS8604
+                                                        key.Key, 
+#pragma warning restore CS8604
+                                                        key.Passphrase));
 
             return msg;
         }

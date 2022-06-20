@@ -11,8 +11,4 @@
     <PackageReference Include="Pericia.OpenPgp" Version="0.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\TickManager\TickManager.csproj" />
-  </ItemGroup>
-
 </Project>

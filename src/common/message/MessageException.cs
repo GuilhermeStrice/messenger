@@ -1,4 +1,4 @@
-namespace Messenger.Common
+namespace Messenger.Common.Messaging
 {
     public class MessageException : Exception
     {

@@ -1,9 +1,11 @@
-namespace Messenger.Common
+using Messenger.Common.Pgp;
+
+namespace Messenger.Common.Messaging
 {
     public class InnerMessage
     {
-        public string Command { get; set; }
-        public string Content { get; set; }
+        public string? Command { get; set; }
+        public string? Content { get; set; }
 
         public string Serialize()
         {
@@ -16,7 +18,9 @@ namespace Messenger.Common
         {
             if (string.IsNullOrEmpty(Command) || string.IsNullOrEmpty(Content))
                 throw new MessageException("Command or content empty");
+#pragma warning disable CS8604
             return "€command:" + Command + ";content:" + PgpManager.Pgp.Encrypt(Content, key.Key) + ";$";
+#pragma warning restore CS8604
         }
 
         public static InnerMessage Deserialize(string message)

@@ -1,7 +1,7 @@
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Pericia.OpenPgp;
 
-namespace Messenger.Common
+namespace Messenger.Common.Pgp
 {
     public static class PgpManager
     {

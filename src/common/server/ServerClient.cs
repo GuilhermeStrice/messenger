@@ -1,7 +1,10 @@
 using System.Net.Sockets;
 using System.Text;
 
-namespace Messenger.Common
+using Messenger.Common.Messaging;
+using Messenger.Common.Pgp;
+
+namespace Messenger.Common.Server
 {
     public class ServerClient
     {
@@ -19,7 +22,7 @@ namespace Messenger.Common
 
         public bool Terminated = false;
 
-        public TrustedClient ClassIdentifier;
+        public TrustedClient? ClassIdentifier;
 
         public Trustworthiness Trustworthiness = Trustworthiness.NotChecked;
 
@@ -142,10 +145,19 @@ namespace Messenger.Common
                         var deserialized_msg = InnerMessage.Deserialize(real_msg);
                         if (deserialized_msg.Command == "handshake")
                         {
+                            if (HasHandshaked)
+                            {
+                                // bad behaviour - what should i do?
+                                return;
+                            }
+
+                            HasHandshaked = true;
+#pragma warning disable CS8604
                             string clientPublicKey = PgpManager.Pgp.Decrypt(deserialized_msg.Content, ServerPrivateKey.Key, ServerPrivateKey.Passphrase);
+#pragma warning restore CS8604
                             ClientPublicKey.Key = PgpManager.LoadPublicKey(clientPublicKey);
 
-                            if (!HasHandshaked)
+                            if (Trustworthiness == Trustworthiness.NotChecked)
                             {
                                 // get identifier
                                 var handshake = new InnerMessage();
@@ -157,10 +169,14 @@ namespace Messenger.Common
                         }
                         else if (deserialized_msg.Command == "tr4")
                         {
-                            HasHandshaked = true;
-
+                            if (!HasHandshaked && (object?)ClassIdentifier != null)
+                            {
+                                // bad behaviour - what should i do?
+                                return;
+                            }
+#pragma warning disable CS8604
                             var client_identifier = PgpManager.Pgp.Decrypt(deserialized_msg.Content, ServerPrivateKey.Key, ServerPrivateKey.Passphrase);
-
+#pragma warning restore CS8604
                             ClassIdentifier = TrustedClient.Deserialize(client_identifier);
                         }
                         else if (deserialized_msg.Command == "terminate")
