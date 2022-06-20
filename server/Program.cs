@@ -1,4 +1,5 @@
-﻿using Messenger.Common.Server;
+﻿using Messenger.Common;
+using Messenger.Common.Server;
 
 namespace Server
 {
@@ -22,7 +23,7 @@ namespace Server
             Console.WriteLine(message_reversed.Command);
             Console.WriteLine(message_reversed.Content);*/
 
-            var trusted_client = new TrustedClient("12.12.12.12", "id_potente", "Servidor 1");
+            var trusted_client = new TrustedClient("12.12.12.12", Util.RandomString(30), "Servidor 1");
             File.WriteAllText("test_id", trusted_client.Serialize());
             Console.WriteLine(trusted_client.Serialize());
         }
