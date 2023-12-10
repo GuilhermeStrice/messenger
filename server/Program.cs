@@ -1,16 +1,25 @@
-﻿using Messenger.Common;
-using Messenger.Common.Server;
+﻿using Infinity.Core.Udp;
+using Messenger.Common;
+using System.Net;
 
 namespace Server
 {
-    // test
     class Program
     {
-        //static Messenger messenger = new Messenger();
+        static UdpConnectionListener listener;
 
         static void Main(string[] args)
         {
-            //messenger.Init();
+            listener = new UdpConnectionListener(new IPEndPoint(IPAddress.Any, 25515));
+
+            listener.HandshakeConnection += (sender, e) =>
+            {
+
+            };
+
+            listener.NewConnection += Listener_NewConnection;
+
+            listener.Start();
 
             /*var message = new Message();
             message.Command = "handshake";
@@ -26,6 +35,11 @@ namespace Server
             var trusted_client = new TrustedClient("12.12.12.12", Util.RandomString(30), "Servidor 1");
             File.WriteAllText("test_id", trusted_client.Serialize());
             Console.WriteLine(trusted_client.Serialize());
+        }
+
+        private static void Listener_NewConnection(Infinity.Core.NewConnectionEventArgs obj)
+        {
+            throw new NotImplementedException();
         }
     }
 }

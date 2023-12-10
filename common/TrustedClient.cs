@@ -1,9 +1,6 @@
-using System;
-using System.IO;
 using System.Text;
-using Messenger.Helpers;
 
-namespace Messenger.Common.Server
+namespace Messenger.Common
 {
     public class TrustedClient
     {
@@ -104,7 +101,7 @@ namespace Messenger.Common.Server
             return base.GetHashCode();
         }
 
-        public static ConcurrentList<TrustedClient> ReadFileList(string trusted_clients_file_path = "trusted_clients")
+        public static List<TrustedClient> ReadFileList(string trusted_clients_file_path = "trusted_clients")
         {
             if (!File.Exists(trusted_clients_file_path))
             {
@@ -115,7 +112,7 @@ namespace Messenger.Common.Server
                 Environment.Exit(0);
             }
 
-            ConcurrentList<TrustedClient> trusted_clients = new ConcurrentList<TrustedClient>();
+            List<TrustedClient> trusted_clients = new List<TrustedClient>();
 
             string[] trusted_clients_file_contents = File.ReadAllLines(trusted_clients_file_path);
 
@@ -123,7 +120,7 @@ namespace Messenger.Common.Server
             {
                 try
                 {
-                    trusted_clients.Add(TrustedClient.Deserialize(trusted_clients_file_contents[i]));
+                    trusted_clients.Add(Deserialize(trusted_clients_file_contents[i]));
                 }
                 catch
                 {
